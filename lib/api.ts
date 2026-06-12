@@ -1,25 +1,33 @@
+import { authHeaders, clearAuthToken, setAuthToken } from "./auth-token";
 import { API_URL } from "./types";
 
 export async function login(email: string, password: string) {
   const res = await fetch(`${API_URL}/auth/login`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    credentials: "include",
     body: JSON.stringify({ email, password }),
   });
   if (!res.ok) {
     const err = await res.json().catch(() => ({}));
     throw new Error(err.detail || "Login failed");
   }
-  return res.json();
+  const data = await res.json();
+  if (data.access_token) {
+    setAuthToken(data.access_token);
+  }
+  return data;
 }
 
 export async function logout() {
-  await fetch(`${API_URL}/auth/logout`, { method: "POST", credentials: "include" });
+  await fetch(`${API_URL}/auth/logout`, {
+    method: "POST",
+    headers: authHeaders(),
+  }).catch(() => undefined);
+  clearAuthToken();
 }
 
 export async function getMe() {
-  const res = await fetch(`${API_URL}/auth/me`, { credentials: "include" });
+  const res = await fetch(`${API_URL}/auth/me`, { headers: authHeaders() });
   if (!res.ok) return null;
   return res.json();
 }
@@ -33,7 +41,7 @@ export async function uploadAsset(file: File): Promise<{
   formData.append("file", file);
   const res = await fetch(`${API_URL}/upload/file`, {
     method: "POST",
-    credentials: "include",
+    headers: authHeaders(),
     body: formData,
   });
   if (!res.ok) throw new Error("Upload failed");
@@ -45,8 +53,21 @@ export async function uploadAsset(file: File): Promise<{
   };
 }
 
-export function exportUrl(projectId: string, format: "json" | "coco") {
-  return `${API_URL}/export/${projectId}?format=${format}`;
+export async function downloadExport(projectId: string, format: "json" | "coco") {
+  const res = await fetch(`${API_URL}/export/${projectId}?format=${format}`, {
+    headers: authHeaders(),
+  });
+  if (!res.ok) throw new Error("Export failed");
+  const blob = await res.blob();
+  const disposition = res.headers.get("Content-Disposition") || "";
+  const match = disposition.match(/filename="([^"]+)"/);
+  const filename = match?.[1] || `export.${format === "coco" ? "json" : "json"}`;
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
 }
 
 function readImageSize(file: File): Promise<{ width: number; height: number }> {
