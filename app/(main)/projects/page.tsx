@@ -6,7 +6,7 @@ import { useState } from "react";
 import { CREATE_PROJECT, PROJECTS_QUERY } from "@/lib/graphql/operations";
 
 export default function ProjectsPage() {
-  const { data, loading, refetch } = useQuery(PROJECTS_QUERY);
+  const { data, loading, error, refetch } = useQuery(PROJECTS_QUERY);
   const [createProject] = useMutation(CREATE_PROJECT, { onCompleted: () => refetch() });
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState({
@@ -39,6 +39,15 @@ export default function ProjectsPage() {
   if (loading) return <div className="p-8 text-slate-400">Loading projects...</div>;
 
   const projects = data?.projects || [];
+
+  if (error) {
+    return (
+      <div className="p-8 max-w-6xl mx-auto">
+        <p className="text-red-400">Failed to load projects: {error.message}</p>
+        <p className="text-slate-500 text-sm mt-2">Try logging out and back in, or restart the API server.</p>
+      </div>
+    );
+  }
 
   return (
     <div className="p-8 max-w-6xl mx-auto">

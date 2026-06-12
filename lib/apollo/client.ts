@@ -3,7 +3,10 @@ import { setContext } from "@apollo/client/link/context";
 import { getAuthToken } from "../auth-token";
 import { GRAPHQL_URL } from "../types";
 
-const httpLink = createHttpLink({ uri: GRAPHQL_URL });
+const httpLink = createHttpLink({
+  uri: GRAPHQL_URL,
+  credentials: "include",
+});
 
 const authLink = setContext((_, { headers }) => {
   const token = getAuthToken();

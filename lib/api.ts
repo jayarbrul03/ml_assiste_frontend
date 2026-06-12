@@ -5,6 +5,7 @@ export async function login(email: string, password: string) {
   const res = await fetch(`${API_URL}/auth/login`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
+    credentials: "include",
     body: JSON.stringify({ email, password }),
   });
   if (!res.ok) {
@@ -22,12 +23,16 @@ export async function logout() {
   await fetch(`${API_URL}/auth/logout`, {
     method: "POST",
     headers: authHeaders(),
+    credentials: "include",
   }).catch(() => undefined);
   clearAuthToken();
 }
 
 export async function getMe() {
-  const res = await fetch(`${API_URL}/auth/me`, { headers: authHeaders() });
+  const res = await fetch(`${API_URL}/auth/me`, {
+    headers: authHeaders(),
+    credentials: "include",
+  });
   if (!res.ok) return null;
   return res.json();
 }
@@ -42,6 +47,7 @@ export async function uploadAsset(file: File): Promise<{
   const res = await fetch(`${API_URL}/upload/file`, {
     method: "POST",
     headers: authHeaders(),
+    credentials: "include",
     body: formData,
   });
   if (!res.ok) throw new Error("Upload failed");
@@ -56,6 +62,7 @@ export async function uploadAsset(file: File): Promise<{
 export async function downloadExport(projectId: string, format: "json" | "coco") {
   const res = await fetch(`${API_URL}/export/${projectId}?format=${format}`, {
     headers: authHeaders(),
+    credentials: "include",
   });
   if (!res.ok) throw new Error("Export failed");
   const blob = await res.blob();
